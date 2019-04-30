@@ -2,6 +2,7 @@ import time
 import json
 import redis
 import cv2
+import numpy as np
 
 try:
     PI_CAMERA = True
@@ -90,10 +91,12 @@ def start_capture(shape):
     """
     print('START CAPTURE.')
     if not PI_CAMERA:
-        print("PI_CAMERA:") # TODO:Need to update
+        print("PC_CAMERA:") # TODO:Need to update
         ### cap = CvCapture(caches.server, settings.eye_settings.get()['shape'], 0)
+        return 0, np.zeros([shape[0],shape[1]])
     else:
         ### cap = PiCapture(caches.server, settings.eye_settings.get()['shape'], 90)
+        print("PI_CAMERA")
         cap = PiCapture(shape, 90)
         return cap.capture()
 
@@ -102,14 +105,17 @@ if __name__ == "__main__":
     # Local var
     fps = 2
 
-    # RedisとのConnect
+    #RedisとのConnect
     r = redis.StrictRedis("redis", 6379, db=0)
     eye_image = eye.Image(r)
     eye_state = eye.State(r)
 
     while True:
         # Receive
-        image_size_dict = json.loads(eye_state.value)
+        if eye_state.value is not None:
+            image_size_dict = json.loads(eye_state.value)
+        else:
+            image_size_dict = {"image_size":{"width":90, "height":90}}
 
         width = image_size_dict["image_size"]["width"]
         height = image_size_dict["image_size"]["height"]
