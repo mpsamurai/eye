@@ -92,7 +92,8 @@ def start_capture(shape):
     print('START CAPTURE.')
     if not PI_CAMERA:
         print("PC_CAMERA:") # TODO:Need to update
-        ### cap = CvCapture(caches.server, settings.eye_settings.get()['shape'], 0)
+        cap = CvCapture(shape, 0)
+        #return cap.capture()
         return 0, np.zeros([shape[0],shape[1]])
     else:
         ### cap = PiCapture(caches.server, settings.eye_settings.get()['shape'], 90)
@@ -107,6 +108,7 @@ if __name__ == "__main__":
 
     #RedisとのConnect
     r = redis.StrictRedis("redis", 6379, db=0)
+    ###r = redis.StrictRedis("raspberrypi.local", 6379, db=0)
     eye_image = eye.Image(r)
     eye_state = eye.State(r)
 
