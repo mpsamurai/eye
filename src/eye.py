@@ -35,16 +35,12 @@ try:
     from picamera import PiCamera
 except ImportError:
     PI_CAMERA = False
-### from neochi.neochi import settings
-### from neochi.eye import caches
 
 from neochi.core.dataflow.data import eye
 
 
 class Capture:
     def __init__(self, shape, rotation):
-        # self._state = cache_server.state
-        # self._image = cache_server.image
         self._shape = shape
         self._rotation = rotation
         self._frame = None
@@ -55,20 +51,6 @@ class Capture:
 
     def _capture(self):
         raise NotImplementedError
-
-    # TODO: Delete following commented code
-    # @property
-    # def state(self):
-    #     return self._state.get()
-    #
-    # @property
-    # def image(self):
-    #     return self._state.get()
-    #
-
-    # def cache(self):
-    #     if self._frame is not None:
-    #         self._image.set(self._frame)
 
 
 class CvCapture(Capture):
@@ -139,9 +121,9 @@ if __name__ == "__main__":
     fps = 0.5
 
     # Redis Connect
-    #r = redis.StrictRedis("redis", 6379, db=0)
+    r = redis.StrictRedis("redis", 6379, db=0)
     #r = redis.StrictRedis("raspberrypi.local", 6379, db=0)
-    r = redis.StrictRedis("localhost", 6379, db=0)
+    #r = redis.StrictRedis("localhost", 6379, db=0)
 
     eye_image = eye.Image(r)
     eye_state = eye.State(r)
@@ -161,30 +143,22 @@ if __name__ == "__main__":
         # Get Image
         bool_cap, captured_img = cap.capture()
         print(bool_cap)
-
         print("captured_img:", captured_img)
         print("type(captured_img):", type(captured_img))
+
         if bool_cap:
             print("type(captured_img[0]):", type(captured_img[0]))
             print("type(captured_img[0][0]):", type(captured_img[0][0]))
             print("type(captured_img[0][0][0]):", type(captured_img[0][0][0]))
 
-            # PC_CAMERAの場合
-            # type(captured_img): <class 'numpy.ndarray'>
-            # type(captured_img[0]): <class 'numpy.ndarray'>
-            # type(captured_img[0][0]): <class 'numpy.ndarray'>
-            # type(captured_img[0][0][0]): <class 'numpy.uint8'>
+        # PC_CAMERA, PI_CAMERA どちらも以下の結果だった
+        # type(captured_img): <class 'numpy.ndarray'>
+        # type(captured_img[0]): <class 'numpy.ndarray'>
+        # type(captured_img[0][0]): <class 'numpy.ndarray'>
+        # type(captured_img[0][0][0]): <class 'numpy.uint8'>
 
-        # Transmit
-        ndarray_img = np.array(captured_img, dtype=np.uint8)
-        print("ndarray_img:", ndarray_img)
-
-        eye_image.value = ndarray_img
+        eye_image.value = captured_img
 
         v = eye_image.value
-        print('eye_image.value:', v)
-        print("type(eye_image.value[0]):", type(v[0]))
-        print("type(eye_image.value[0][0]):", type(v[0][0]))
-        print("type(eye_image.value[0][0][0]):", type(v[0][0][0]))
 
         time.sleep(1. / fps)
