@@ -62,7 +62,7 @@ class CvCapture(Capture):
         ret, frame = self._cap.read()
         if ret and frame is not None:
             self._frame = cv2.cvtColor(cv2.resize(frame, tuple(self._shape)), cv2.COLOR_BGR2RGB)
-        return ret, frame
+        return ret, self._frame
 
     def release(self):
         self._cap.release()
@@ -158,7 +158,5 @@ if __name__ == "__main__":
         # type(captured_img[0][0][0]): <class 'numpy.uint8'>
 
         eye_image.value = captured_img
-
-        v = eye_image.value
 
         time.sleep(1. / fps)
