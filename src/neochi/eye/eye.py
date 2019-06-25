@@ -27,7 +27,7 @@ import time
 import json
 import redis
 import cv2
-import numpy as np
+
 
 try:
     PI_CAMERA = True
@@ -88,7 +88,7 @@ class PiCapture(Capture):
         self._camera.close()
 
 
-def get_capture(shape):
+def get_capture(shape, rotation_pc=0, rotation_pi=90):
     """
     :param image_size:
     :param fps[float]:
@@ -97,10 +97,10 @@ def get_capture(shape):
     print('START CAPTURE.')
     if not PI_CAMERA:
         print("PC_CAMERA:")
-        return CvCapture(shape, 0)
+        return CvCapture(shape, rotation_pc)
     else:
         print("PI_CAMERA")
-        return PiCapture(shape, 90)
+        return PiCapture(shape, rotation_pi)
 
 
 def get_img_size(eye_state):
