@@ -88,7 +88,7 @@ class PiCapture(Capture):
         self._camera.close()
 
 
-def start_capture(shape):
+def get_capture(shape):
     """
     :param image_size:
     :param fps[float]:
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     # Receive image size
     img_size = get_img_size(eye_state)
 
-    cap = start_capture(img_size)
+    cap = get_capture(img_size)
 
     i = 0
     while True:
