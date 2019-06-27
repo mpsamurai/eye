@@ -23,8 +23,8 @@
 # Based on Junya Kaneko
 __author__ = 'Yutaro Kida'
 
+
 import time
-import json
 import redis
 import cv2
 
@@ -36,12 +36,13 @@ try:
 except ImportError:
     PI_CAMERA = False
 
-from neochi.core.dataflow.data import eye
+from neochi.core import settings
+from neochi.core.dataflow import data
 
 
 class Capture:
-    def __init__(self, shape, rotation):
-        self._shape = shape
+    def __init__(self, size, rotation):
+        self._size = size
         self._rotation = rotation
         self._frame = None
 
@@ -54,14 +55,14 @@ class Capture:
 
 
 class CvCapture(Capture):
-    def __init__(self, shape, rotation):
-        super().__init__(shape, rotation)
+    def __init__(self, size, rotation):
+        super().__init__(size, rotation)
         self._cap = cv2.VideoCapture(0)
 
     def _capture(self):
         ret, frame = self._cap.read()
         if ret and frame is not None:
-            self._frame = cv2.cvtColor(cv2.resize(frame, tuple(self._shape)), cv2.COLOR_BGR2RGB)
+            self._frame = cv2.cvtColor(cv2.resize(frame, tuple(self._size)), cv2.COLOR_BGR2RGB)
         return ret, self._frame
 
     def release(self):
@@ -69,9 +70,9 @@ class CvCapture(Capture):
 
 
 class PiCapture(Capture):
-    def __init__(self, shape, rotation):
-        super().__init__(shape, rotation)
-        self._camera = PiCamera(resolution=shape)
+    def __init__(self, size, rotation):
+        super().__init__(size, rotation)
+        self._camera = PiCamera(resolution=size)
         self._camera.rotation = self._rotation
         self._cap = PiRGBArray(self._camera)
 
@@ -88,7 +89,7 @@ class PiCapture(Capture):
         self._camera.close()
 
 
-def get_capture(shape, rotation_pc=0, rotation_pi=90):
+def get_capture(size, rotation_pc=0, rotation_pi=90):
     """
     :param image_size:
     :param fps[float]:
@@ -97,66 +98,49 @@ def get_capture(shape, rotation_pc=0, rotation_pi=90):
     print('START CAPTURE.')
     if not PI_CAMERA:
         print("PC_CAMERA:")
-        return CvCapture(shape, rotation_pc)
+        return CvCapture(size, rotation_pc)
     else:
         print("PI_CAMERA")
-        return PiCapture(shape, rotation_pi)
+        return PiCapture(size, rotation_pi)
 
 
-def get_img_size(eye_state):
-    if eye_state.value is not None:
-        image_size_dict = json.loads(eye_state.value)
-    else:
-        image_size_dict = {"image_size": {"width": 90, "height": 90}}
+def start_capture(size, redis_server, rotation_pc=0, rotation_pi=90, fps=0.5):
+    def get_next_shape(current_state, current_size, default_shape):
+        if current_state is None or 'image_size' not in current_state:
+            if current_size is None:
+                return True, default_shape
+            else:
+                return False, current_size
+        else:
+            if current_size is None or \
+                    current_size[0] != current_state['image_size']['width'] or \
+                    current_size[1] != current_state['image_size']['height']:
+                return True, (current_state['image_size']['width'], current_state['image_size']['height'])
+            else:
+                return False, current_size
 
-    width = image_size_dict["image_size"]["width"]
-    height = image_size_dict["image_size"]["height"]
-    image_size = [width, height]
+    def update_capture(current_cap, current_state, current_size, default_shape):
+        is_shape_changed, current_size = get_next_shape(current_state, current_size, default_shape)
+        if is_shape_changed:
+            if current_cap is not None:
+                current_cap.release()
+            current_cap = get_capture(current_size, rotation_pc, rotation_pi)
+        return current_cap, current_size
 
-    return image_size
+    cap, current_shape = None, None
+    image, state = data.eye.Image(redis_server), data.eye.State(redis_server)
+    while True:
+        start_time = time.time()
+        cap, current_shape = update_capture(cap, state.value, current_shape, size)
+        captured, captured_image = cap.capture()
+        if not captured:
+            continue
+        image.value = captured_image
+        sleep_duration = 1. / fps - (time.time() - start_time)
+        if sleep_duration > 0:
+            time.sleep(sleep_duration)
 
 
 if __name__ == "__main__":
-    # Local var
-    fps = 0.5
-
-    # Redis Connect
-    r = redis.StrictRedis("redis", 6379, db=0)
-    #r = redis.StrictRedis("raspberrypi.local", 6379, db=0)
-    #r = redis.StrictRedis("localhost", 6379, db=0)
-
-    eye_image = eye.Image(r)
-    eye_state = eye.State(r)
-
-    # Receive image size
-    img_size = get_img_size(eye_state)
-
-    cap = get_capture(img_size)
-
-    i = 0
-    while True:
-        i = i + 1
-        print(i)
-
-        img_size = get_img_size(eye_state)
-
-        # Get Image
-        bool_cap, captured_img = cap.capture()
-        print(bool_cap)
-        print("captured_img:", captured_img)
-        print("type(captured_img):", type(captured_img))
-
-        if bool_cap:
-            print("type(captured_img[0]):", type(captured_img[0]))
-            print("type(captured_img[0][0]):", type(captured_img[0][0]))
-            print("type(captured_img[0][0][0]):", type(captured_img[0][0][0]))
-
-        # PC_CAMERA, PI_CAMERA どちらも以下の結果だった
-        # type(captured_img): <class 'numpy.ndarray'>
-        # type(captured_img[0]): <class 'numpy.ndarray'>
-        # type(captured_img[0][0]): <class 'numpy.ndarray'>
-        # type(captured_img[0][0][0]): <class 'numpy.uint8'>
-
-        eye_image.value = captured_img
-
-        time.sleep(1. / fps)
+    r = redis.StrictRedis(settings.REDIS_HOST, settings.REDIS_PORT, db=0)
+    start_capture(settings.EYE_CAP_SIZE, r)
