@@ -143,4 +143,4 @@ def start_capture(size, redis_server, rotation_pc=0, rotation_pi=90, fps=0.5):
 
 if __name__ == "__main__":
     r = redis.StrictRedis(settings.REDIS_HOST, settings.REDIS_PORT, db=0)
-    start_capture(settings.EYE_CAP_SIZE, r)
+    start_capture(settings.EYE_CAP_SIZE, r, fps=settings.EYE_CAP_FPS)
