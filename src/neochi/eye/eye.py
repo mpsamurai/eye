@@ -105,10 +105,10 @@ def get_capture(size, rotation_pc=0, rotation_pi=90):
 
 
 def start_capture(size, redis_server, rotation_pc=0, rotation_pi=90, fps=0.5):
-    def get_next_shape(current_state, current_size, default_shape):
+    def get_next_size(current_state, current_size, default_size):
         if current_state is None or 'image_size' not in current_state:
             if current_size is None:
-                return True, default_shape
+                return True, default_size
             else:
                 return False, current_size
         else:
@@ -119,19 +119,19 @@ def start_capture(size, redis_server, rotation_pc=0, rotation_pi=90, fps=0.5):
             else:
                 return False, current_size
 
-    def update_capture(current_cap, current_state, current_size, default_shape):
-        is_shape_changed, current_size = get_next_shape(current_state, current_size, default_shape)
-        if is_shape_changed:
+    def update_capture(current_cap, current_state, current_size, default_size):
+        is_size_changed, current_size = get_next_size(current_state, current_size, default_size)
+        if is_size_changed:
             if current_cap is not None:
                 current_cap.release()
             current_cap = get_capture(current_size, rotation_pc, rotation_pi)
         return current_cap, current_size
 
-    cap, current_shape = None, None
+    cap, current_size = None, None
     image, state = data.eye.Image(redis_server), data.eye.State(redis_server)
     while True:
         start_time = time.time()
-        cap, current_shape = update_capture(cap, state.value, current_shape, size)
+        cap, current_size = update_capture(cap, state.value, current_size, size)
         captured, captured_image = cap.capture()
         if not captured:
             continue
