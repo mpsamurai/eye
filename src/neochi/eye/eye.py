@@ -36,7 +36,6 @@ except ImportError:
     PI_CAMERA = False
 
 from neochi.core.dataflow import data
-from . import settings
 
 
 class Capture:
