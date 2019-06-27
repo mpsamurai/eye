@@ -25,7 +25,6 @@ __author__ = 'Yutaro Kida'
 
 
 import time
-import redis
 import cv2
 
 
