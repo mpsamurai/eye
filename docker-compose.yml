@@ -6,10 +6,37 @@ services:
     ports:
       - 6379:6379
   eye:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-raspbian
     privileged: true
     volumes:
-      - ./src:/code
-      - ../neochi-core/src/neochi:/code/neochi
+      - ./src/neochi/eye:/code/neochi/eye
+      - ../neochi-core/src/neochi/core:/code/neochi/core
     depends_on:
       - redis
+    environment:
+      - NEOCHI:EYE:REDIS_HOST:STR=localhost
+      - NEOCHI:EYE:REDIS_PORT:INT=6379
+      - NEOCHI:EYE:FPS:FLOAT=0.5
+      - NEOCHI:EYE:WIDTH:INT=32
+      - NEOCHI:EYE:HEIGHT:INT=32
+      - NEOCHI:EYE:ROTATION_PC:INT=0
+      - NEOCHI:EYE:ROTATION_PI:INT=90
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:DATA_DIR:STR=data/behavior_classifier
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:LABELS:JSON=["move_laying", "nomove_laying", "move", "nomove", "none"]
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:SHAPE:JSON=[32, 32, 5]
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:FPS:FLOAT=1.0
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:OPTIMIZER:STR=adam
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:LOSS:STR=sparse_categorical_crossentropy
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:METRICS:JSON=["accuracy"]
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:SAVE_DIR:STR=models/behavior_classifier
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:TRAIN_SIZE:FLOAT=0.75
+      - NEOCHI:BRAIN_BEHAVIOR_CLASSIFIER:EPOCHS:INT=20
+      - NEOCHI:BRAIN_SLEEP_DETECTOR:TIME_STEPS:INT=10
+      - NEOCHI:BRAIN_SLEEP_DETECTOR:WEIGHTS:JSON=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+      - NEOCHI:BRAIN_SLEEP_DETECTOR:FPS:FLOAT=1
+      - NEOCHI:BRAIN_SLEEP_DETECTOR:SAVE_DIR:STR=models/sleep_detector
+      - NEOCHI:BRAIN_SLEEP_DETECTOR:THRESHOLD:FLOAT=0.9
+      - NEOCHI:BRAIN:REDIS_HOST:STR=localhost
+      - NEOCHI:BRAIN:REDIS_PORT:INT=6379
