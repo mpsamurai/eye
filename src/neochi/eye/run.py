@@ -25,10 +25,17 @@ __author__ = 'Junya Kaneko <junya@mpsamurai.org>'
 
 
 import redis
-from neochi.eye import settings
+from neochi.core.utils import environ
 from neochi.eye import start_capture
 
 
+def run(redis_host, redis_port, width, height, rotation_pc, rotation_pi, fps):
+    r = redis.StrictRedis(redis_host, redis_port)
+    start_capture((width, height), r, rotation_pc, rotation_pi, fps)
+
+
 if __name__ == "__main__":
-    r = redis.StrictRedis(settings.REDIS_HOST, settings.REDIS_PORT, db=0)
-    start_capture(settings.SIZE, r, fps=settings.FPS)
+    kwargs = environ.get_kwargs('EYE')
+    print('EYE SETTINGS:', kwargs)
+    print('RUN EYE')
+    run(**kwargs)
