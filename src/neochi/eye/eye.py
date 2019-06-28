@@ -104,7 +104,7 @@ def get_capture(size, rotation_pc=0, rotation_pi=90):
 def start_capture(redis_server, size, rotation_pc, rotation_pi, fps):
     image = data.eye.Image(redis_server)
     state = data.eye.State(redis_server)
-    current_state = {'size': size, 'rotation_pc': rotation_pc, 'rotation_pi': rotation_pi, 'fps': fps}
+    state.value = current_state = {'size': size, 'rotation_pc': rotation_pc, 'rotation_pi': rotation_pi, 'fps': fps}
     cap = None
     while True:
         start_time = time.time()
