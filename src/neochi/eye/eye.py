@@ -27,7 +27,6 @@ __author__ = 'Yutaro Kida'
 import time
 import cv2
 
-
 try:
     PI_CAMERA = True
     from picamera.array import PiRGBArray
@@ -102,34 +101,17 @@ def get_capture(size, rotation_pc=0, rotation_pi=90):
         return PiCapture(size, rotation_pi)
 
 
-def start_capture(size, redis_server, rotation_pc=0, rotation_pi=90, fps=0.5):
-    def get_next_size(current_state, current_size, default_size):
-        if current_state is None or 'image_size' not in current_state:
-            if current_size is None:
-                return True, default_size
-            else:
-                return False, current_size
-        else:
-            if current_size is None or \
-                    current_size[0] != current_state['image_size']['width'] or \
-                    current_size[1] != current_state['image_size']['height']:
-                return True, (current_state['image_size']['width'], current_state['image_size']['height'])
-            else:
-                return False, current_size
-
-    def update_capture(current_cap, current_state, current_size, default_size):
-        is_size_changed, current_size = get_next_size(current_state, current_size, default_size)
-        if is_size_changed:
-            if current_cap is not None:
-                current_cap.release()
-            current_cap = get_capture(current_size, rotation_pc, rotation_pi)
-        return current_cap, current_size
-
-    cap, current_size = None, None
-    image, state = data.eye.Image(redis_server), data.eye.State(redis_server)
+def start_capture(redis_server, size, rotation_pc, rotation_pi, fps):
+    image = data.eye.Image(redis_server)
+    state = data.eye.State(redis_server)
+    current_state = {'size': size, 'rotation_pc': rotation_pc, 'rotation_pi': rotation_pi, 'fps': fps}
+    cap = None
     while True:
         start_time = time.time()
-        cap, current_size = update_capture(cap, state.value, current_size, size)
+        if state.changed(current_state) or cap is None:
+            current_state = state.value
+            cap = get_capture(current_state['size'], current_state['rotation_pc'], current_state['rotation_pi'])
+            fps = current_state['fps']
         captured, captured_image = cap.capture()
         if not captured:
             continue
