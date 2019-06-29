@@ -29,9 +29,9 @@ from neochi.core.utils import environ
 from neochi.eye import start_capture
 
 
-def run(redis_host, redis_port, width, height, rotation_pc, rotation_pi, fps):
+def run(redis_host, redis_port, size, rotation_pc, rotation_pi, fps):
     r = redis.StrictRedis(redis_host, redis_port)
-    start_capture(r, (width, height), rotation_pc, rotation_pi, fps)
+    start_capture(r, size, rotation_pc, rotation_pi, fps)
 
 
 if __name__ == "__main__":
