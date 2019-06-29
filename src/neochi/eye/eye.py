@@ -110,8 +110,11 @@ def start_capture(redis_server, size, rotation_pc, rotation_pi, fps):
         start_time = time.time()
         if state.changed(current_state) or cap is None:
             current_state = state.value
-            cap = get_capture(current_state['size'], current_state['rotation_pc'], current_state['rotation_pi'])
-            fps = current_state['fps']
+            try:
+                cap = get_capture(current_state['size'], current_state['rotation_pc'], current_state['rotation_pi'])
+                fps = current_state['fps']
+            except KeyError:
+                print('EYE STATE ERROR:', current_state)
         captured, captured_image = cap.capture()
         if not captured:
             continue
